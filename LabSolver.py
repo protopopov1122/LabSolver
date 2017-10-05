@@ -20,7 +20,7 @@ def eval_student(B: float, n: int):
 # Evaluates average value and error for variables with multiple measurements
 def long_evaluate_average(source: ([float], float),
                           variable: sympy.Symbol,
-                          settings: {str: float}):
+                          settings: dict):
     source_vals = source[0]
     error = source[1]
     average = sum(source_vals) / len(source_vals)
@@ -37,32 +37,54 @@ def long_evaluate_average(source: ([float], float),
     else:
         delta_X = math.sqrt(delta_Xs**2 + delta_Xd**2)
     epsilon = delta_X / average * 100
-    return {
+    result = {
         'result': average,
         'error': delta_X,
         'epsilon': epsilon
     }
+    if settings['extended']:
+        result['type'] = 'long'
+        result['measurements'] = source_vals
+        result['measurement_error'] = error
+        result['delta'] = {
+            'XS': delta_Xs,
+            'XD': delta_Xd
+        }
+        result['distrib'] = {
+            'B': B,
+            'tB_N': tB_from_N,
+            'tB_Inf': tB_from_Inf
+        }
+        result['S'] = S
+    return result
 
 
 # Evaluates average value and error for variables with only one measurement
-def short_evaluate_average(source: ([float], float), variable: sympy.Symbol, settings: {str: float}):
+def short_evaluate_average(source: ([float], float), variable: sympy.Symbol, settings: dict):
     average = source[0][0]
     error = source[1]
     B = settings['B']
     tB_from_Inf = eval_student(B, 10000)
     delta_X = error / 3 * tB_from_Inf
     epsilon = delta_X / average * 100
-    return {
+    result = {
         'result': average,
         'error': delta_X,
         'epsilon': epsilon
     }
+    if settings['extended']:
+        result['type'] = 'short'
+        result['distrib'] = {
+            'B': B,
+            'tB_Inf': tB_from_Inf
+        }
+    return result
 
 
 # Facade for two above functions which decides which calculation should be performed
 def evaluate_average_result(experiment: {sympy.Symbol: ([float], float)},
                             variable: sympy.Symbol,
-                            settings: {str: float}):
+                            settings: dict):
     res = experiment[variable]
     if len(res[0]) == 1:
         return short_evaluate_average(res, variable, settings)
@@ -74,28 +96,43 @@ def evaluate_average_result(experiment: {sympy.Symbol: ([float], float)},
 def evaluate_partial_error(formula: sympy.Expr,
                            variable: sympy.Symbol,
                            values: {sympy.Symbol: float},
-                           avg_results: {sympy.Symbol: {str: float}}):
+                           avg_results: {sympy.Symbol: {str: float}},
+                           settings: dict):
     differential = formula.diff(variable).evalf(subs=values)
-    return differential * avg_results[variable]['error']
+    result = {
+        'result': differential * avg_results[variable]['error']
+    }
+    if settings['extended']:
+        result['differential'] = formula.diff(variable)
+        result['differential_value'] = differential
+        result['partial_error'] = avg_results[variable]['error']
+    return result
 
 
 # Calculate given formula value and error with given variables and constants
 def evaluate_formula(formula: sympy.Expr,
                      avg_results: {sympy.Symbol: {str: float}},
-                     constants: {sympy.Symbol: float}):
+                     constants: {sympy.Symbol: float},
+                     settings: dict):
     values = dict()
     for variable in avg_results.keys():
         values[variable] = avg_results[variable]['result']
     for variable in constants.keys():
         values[variable] = constants[variable]
     result = formula.evalf(subs=values)
-    delta = math.sqrt(sum([evaluate_partial_error(formula, variable, values, avg_results)**2 for variable in avg_results.keys()]))
+    differentials = [evaluate_partial_error(formula, variable, values, avg_results, settings) for variable in avg_results.keys()]
+    delta = math.sqrt(sum(partial['result']**2 for partial in differentials))
     epsilon = delta / result * 100
-    return {
+    data = {
         'result': result,
         'delta': delta,
         'epsilon': epsilon
     }
+    if settings['extended']:
+        data['formula'] = formula
+        data['differentials'] = differentials
+        data['values'] = values
+    return data
 
 
 # Calculate each experiment measurement average values, errors and
@@ -103,7 +140,7 @@ def evaluate_formula(formula: sympy.Expr,
 def evaluate_experiment(formulas: [(str, sympy.Expr)],
                         experiment: {sympy.Symbol: ([float], float)},
                         constants: {sympy.Symbol: float},
-                        settings: {str: float}):
+                        settings: dict):
     avg_results = dict()
     for variable in experiment.keys():
         avg_results[variable] = evaluate_average_result(experiment, variable, settings)
@@ -111,7 +148,7 @@ def evaluate_experiment(formulas: [(str, sympy.Expr)],
         'average': avg_results
     }
     for formula in formulas:
-        results[formula[0]] = evaluate_formula(formula[1], avg_results, constants)
+        results[formula[0]] = evaluate_formula(formula[1], avg_results, constants, settings)
     return results
 
 
@@ -119,7 +156,7 @@ def evaluate_experiment(formulas: [(str, sympy.Expr)],
 def evaluate(formulas: [(str, sympy.Expr)],
              experiments: [{sympy.Symbol: ([float], float)}],
              constants: {sympy.Symbol: float},
-             settings: {str: float}):
+             settings: dict):
     return [evaluate_experiment(formulas, experiment, constants, settings) for experiment in experiments]
 
 
@@ -144,7 +181,7 @@ def main():
     # Tuple consists of measurement result array and measurement instrument error
     experiments = [
         {I: ([1.5], 0.025),
-         phi: ([65], 0.25),
+         phi: ([65, 1], 0.25),
          R: ([0.18], 0.005)}
     ]
 
@@ -156,11 +193,13 @@ def main():
 
     # Just some settings. Currently only B value
     settings = {
-        'B': 0.95
+        'B': 0.95,
+        'extended': True
     }
 
     # Evaluate that!
-    print(evaluate(formulas, experiments, constants, settings))
+    result = evaluate(formulas, experiments, constants, settings)
+    print(result)
 
 
 if __name__ == '__main__':
