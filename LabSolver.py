@@ -8,6 +8,7 @@
 import math
 import sympy
 from scipy.stats import t as student
+from LabPrinter import print_lab
 
 
 # Students t-distribution calculator
@@ -73,6 +74,7 @@ def short_evaluate_average(source: ([float], float), variable: sympy.Symbol, set
         'epsilon': epsilon
     }
     if settings['extended']:
+        result['measurement_error'] = error
         result['type'] = 'short'
         result['distrib'] = {
             'B': B,
@@ -199,7 +201,7 @@ def main():
 
     # Evaluate that!
     result = evaluate(formulas, experiments, constants, settings)
-    print(result)
+    print_lab(result)
 
 
 if __name__ == '__main__':
