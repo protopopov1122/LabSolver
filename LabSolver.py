@@ -194,6 +194,8 @@ def evaluate(formulas: [(str, sympy.Expr)],
         'common': avg_common,
         'result': results
     }
+    if settings['extended']:
+        result['constants'] = constants
     return result
 
 

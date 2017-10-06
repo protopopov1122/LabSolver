@@ -9,7 +9,7 @@ def round_to_n(x, n):
 
 
 def print_short_direct_measurement(doc: pylatex.Document, variable: sympy.Symbol, measurement):
-    doc.append(NoEscape(r'\( %s_{vid}=%s \)' % (sympy.latex(variable), measurement['result'])))
+    doc.append(NoEscape(r'\( %s_{av}=%s \)' % (sympy.latex(variable), measurement['result'])))
     doc.append('\n')
 
     doc.append(NoEscape(r'\( \delta_{%s}=%s \)' % (format(variable), measurement['measurement_error'])))
@@ -28,7 +28,7 @@ def print_short_direct_measurement(doc: pylatex.Document, variable: sympy.Symbol
     )))
     doc.append('\n')
 
-    doc.append(NoEscape(r'\( \varepsilon=\frac{\Delta %s}{%s_{vid}}*100\%%=\frac{%s}{%s}*100\%%=%s\%% \)' % (
+    doc.append(NoEscape(r'\( \varepsilon=\frac{\Delta %s}{%s_{av}}*100\%%=\frac{%s}{%s}*100\%%=%s\%% \)' % (
         sympy.latex(variable), sympy.latex(variable),
         measurement['error'], measurement['result'],
         measurement['epsilon']
@@ -44,7 +44,7 @@ def print_short_direct_measurement(doc: pylatex.Document, variable: sympy.Symbol
 
 def print_long_direct_measurement(doc: pylatex.Document, variable: sympy.Symbol, measurement):
     variable_latex = sympy.latex(variable)
-    doc.append(NoEscape(r'\( %s_{vid}=\frac{1}{n}\displaystyle\sum_{i=1}^{n} %s_{i}=\frac{' % (
+    doc.append(NoEscape(r'\( %s_{av}=\frac{1}{n}\displaystyle\sum_{i=1}^{n} %s_{i}=\frac{' % (
         variable_latex, variable_latex
     )))
     meas = measurement['measurements']
@@ -58,7 +58,7 @@ def print_long_direct_measurement(doc: pylatex.Document, variable: sympy.Symbol,
                                              format(measurement['result']))))
     doc.append('\n')
 
-    doc.append(NoEscape(r'\( S_{%s}=\sqrt{\frac{\displaystyle\sum_{i=1}^{n} (%s_{i} - %s_{vid})^2}{n*(n-1)}}=\sqrt{\frac{' % (
+    doc.append(NoEscape(r'\( S_{%s}=\sqrt{\frac{\displaystyle\sum_{i=1}^{n} (%s_{i} - %s_{av})^2}{n*(n-1)}}=\sqrt{\frac{' % (
         variable_latex, variable_latex, variable_latex
     )))
     for index, source_val in enumerate(meas):
@@ -111,7 +111,7 @@ def print_long_direct_measurement(doc: pylatex.Document, variable: sympy.Symbol,
         )))
     doc.append('\n')
 
-    doc.append(NoEscape(r'\( \varepsilon=\frac{\Delta %s}{%s_{vid}}*100\%%=\frac{%s}{%s}*100\%%=%s\%% \)' % (
+    doc.append(NoEscape(r'\( \varepsilon=\frac{\Delta %s}{%s_{av}}*100\%%=\frac{%s}{%s}*100\%%=%s\%% \)' % (
         variable_latex, variable_latex,
         delta_X, measurement['result'],
         measurement['epsilon']
@@ -176,7 +176,7 @@ def print_formula(doc: pylatex.Document, formula: str, experiment: dict, common:
     doc.append(NoEscape(src))
     doc.append('\n')
 
-    doc.append(NoEscape(r'\( \varepsilon=\frac{\Delta %s}{%s_{vid}}*100\%%=\frac{%s}{%s}*100\%%=%s\%% \)' % (
+    doc.append(NoEscape(r'\( \varepsilon=\frac{\Delta %s}{%s_{av}}*100\%%=\frac{%s}{%s}*100\%%=%s\%% \)' % (
         sympy.latex(formula), sympy.latex(formula),
         result['delta'], result['result'],
         result['epsilon']
@@ -196,8 +196,34 @@ def print_indirect_measurements(doc: pylatex.Document, experiment: dict, common:
             print_formula(doc, formula, experiment,common)
 
 
-def print_experiment(doc: pylatex.Document, experiment: dict, common: dict):
+def print_measurement_data(doc: pylatex.Document, experiment: dict, common: dict, constants: dict):
+    for variable in common.keys():
+        doc.append(NoEscape(r'\( %s=%s \pm %s \)' % (
+            sympy.latex(variable),
+            common[variable]['result'],
+            common[variable]['measurement_error']
+        )))
+        doc.append('\n')
+
+    for variable in experiment['average'].keys():
+        doc.append(NoEscape(r'\( %s=%s \pm %s \)' % (
+            sympy.latex(variable),
+            experiment['average'][variable]['result'],
+            experiment['average'][variable]['measurement_error']
+        )))
+        doc.append('\n')
+
+    for variable in constants.keys():
+        doc.append(NoEscape(r'\( %s=%s \)' % (
+            sympy.latex(variable),
+            constants[variable]
+        )))
+        doc.append('\n')
+
+def print_experiment(doc: pylatex.Document, experiment: dict, common: dict, constants: dict):
     with doc.create(pylatex.Section('Experiment')):
+        with doc.create(pylatex.Subsection('Measurement data and constants')):
+            print_measurement_data(doc, experiment, common, constants)
         with doc.create(pylatex.Subsection('Direct measurements')):
             print_direct_measurements(doc, experiment['average'])
         with doc.create(pylatex.Subsection('Indirect measurements')):
@@ -213,6 +239,6 @@ def print_lab(results: dict):
     doc = pylatex.Document('Report', lmodern=False, textcomp=False, inputenc=None, fontenc=None, page_numbers=False)
     print_common_measurements(doc, results)
     for experiment in results['result']:
-        print_experiment(doc, experiment, results['common'])
+        print_experiment(doc, experiment, results['common'], results['constants'])
     doc.generate_tex('/home/eugene/1.tex')
     doc.generate_pdf('/home/eugene/1.pdf', clean_tex=True)
