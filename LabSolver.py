@@ -105,23 +105,25 @@ def evaluate_average_result(experiment: {sympy.Symbol: ([float], float)},
 def evaluate_partial_error(formula: sympy.Expr,
                            variable: sympy.Symbol,
                            values: {sympy.Symbol: float},
+                           avg_common: dict,
                            avg_results: {sympy.Symbol: {str: float}},
                            settings: dict):
     rnd = lambda x: round_to_n(x, settings['round']) if 'round' in settings else x
     differential = rnd(formula.diff(variable).evalf(subs=values))
     result = {
-        'result': rnd(differential * avg_results[variable]['error'])
+        'result': rnd(differential * (avg_results[variable]['error'] if variable in avg_results else avg_common[variable]['error']))
     }
     if settings['extended']:
         result['symbol'] = variable
         result['differential'] = formula.diff(variable)
         result['differential_value'] = differential
-        result['partial_error'] = rnd(avg_results[variable]['error'])
+        result['partial_error'] = rnd(avg_results[variable]['error'] if variable in avg_results else avg_common[variable]['error'])
     return result
 
 
 # Calculate given formula value and error with given variables and constants
 def evaluate_formula(formula: sympy.Expr,
+                     avg_common: dict,
                      avg_results: {sympy.Symbol: {str: float}},
                      constants: {sympy.Symbol: float},
                      settings: dict):
@@ -131,8 +133,11 @@ def evaluate_formula(formula: sympy.Expr,
         values[variable] = avg_results[variable]['result']
     for variable in constants.keys():
         values[variable] = constants[variable]
+    for variable in avg_common.keys():
+        values[variable] = avg_common[variable]['result']
     result = rnd(formula.evalf(subs=values))
-    differentials = [evaluate_partial_error(formula, variable, values, avg_results, settings) for variable in avg_results.keys()]
+    differentials = [evaluate_partial_error(formula, variable, values, avg_common, avg_results, settings) for variable in avg_results.keys()]
+    differentials.extend(evaluate_partial_error(formula, variable, values, avg_common, avg_results, settings) for variable in avg_common.keys())
     delta = rnd(math.sqrt(sum(partial['result']**2 for partial in differentials)))
     epsilon = rnd(delta / result * 100)
     data = {
@@ -151,6 +156,7 @@ def evaluate_formula(formula: sympy.Expr,
 # Calculate each experiment measurement average values, errors and
 # formula results based on given values and constants
 def evaluate_experiment(formulas: [(str, sympy.Expr)],
+                        common_measurements: dict,
                         experiment: {sympy.Symbol: ([float], float)},
                         constants: {sympy.Symbol: float},
                         settings: dict):
@@ -162,18 +168,33 @@ def evaluate_experiment(formulas: [(str, sympy.Expr)],
         'formulas': dict()
     }
     for formula in formulas:
-        results['formulas'][formula[0]] = evaluate_formula(formula[1], avg_results, constants, settings)
+        results['formulas'][formula[0]] = evaluate_formula(formula[1], common_measurements, avg_results, constants, settings)
     if settings['extended'] and settings['round']:
         results['round'] = settings['round']
     return results
 
 
+def evaluate_common_measurements(measurements: {sympy.Symbol: ([float], float)},
+                                 settings):
+    avg_common = dict()
+    for variable in measurements.keys():
+        avg_common[variable] = evaluate_average_result(measurements, variable, settings)
+    return avg_common
+
+
 # Evaluate experiments
 def evaluate(formulas: [(str, sympy.Expr)],
+             common_measurements: {sympy.Symbol: ([float], float)},
              experiments: [{sympy.Symbol: ([float], float)}],
              constants: {sympy.Symbol: float},
              settings: dict):
-    return [evaluate_experiment(formulas, experiment, constants, settings) for experiment in experiments]
+    avg_common = evaluate_common_measurements(common_measurements, settings)
+    results = [evaluate_experiment(formulas, avg_common, experiment, constants, settings) for experiment in experiments]
+    result = {
+        'common': avg_common,
+        'result': results
+    }
+    return result
 
 
 # Main function
@@ -195,10 +216,13 @@ def main():
     # Each measurement is dictionary which keys are variables from
     # first block and tuple
     # Tuple consists of measurement result array and measurement instrument error
+    common_measurements = {R: ([0.18], 0.005)}
     experiments = [
-        {I: ([1], 0.025),
-         phi: ([22, 24], 1),
-         R: ([0.18], 0.005)}
+        {I: ([1], 0.025), phi: ([22, 24], 1)},
+        {I: ([2.4], 0.025), phi: ([44, 46], 1)},
+        {I: ([3.5], 0.025), phi: ([56, 58], 1)},
+        {I: ([4.6], 0.025), phi: ([62], 1)},
+        {I: ([5], 0.025), phi: ([64], 1)}
     ]
 
     # Define used constants. They don't have errors so are used as is
@@ -215,7 +239,8 @@ def main():
     }
 
     # Evaluate that!
-    result = evaluate(formulas, experiments, constants, settings)
+    result = evaluate(formulas, common_measurements, experiments, constants, settings)
+    print(result)
     print_lab(result)
 
 

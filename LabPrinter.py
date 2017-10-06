@@ -135,7 +135,7 @@ def print_direct_measurements(doc: pylatex.Document, measurements: dict):
                 print_long_direct_measurement(doc, variable, measurement)
 
 
-def print_formula(doc: pylatex.Document, formula: str, experiment: dict):
+def print_formula(doc: pylatex.Document, formula: str, experiment: dict, common: dict):
     rnd = lambda x: round_to_n(x, experiment['round']) if 'round' in experiment else x
     result = experiment['formulas'][formula]
     doc.append(NoEscape(r'\( %s=%s \)' % (sympy.latex(formula), sympy.latex(result['formula']))))
@@ -147,9 +147,11 @@ def print_formula(doc: pylatex.Document, formula: str, experiment: dict):
             sympy.latex(formula), sympy.latex(diff['symbol']),
             sympy.latex(diff['symbol']),
             sympy.latex(diff['differential']),
-            experiment['average'][diff['symbol']]['result'],
+            experiment['average'][diff['symbol']]['error'] if diff['symbol'] in experiment['average'] \
+                else common[diff['symbol']]['error'],
             diff['differential_value'],
-            experiment['average'][diff['symbol']]['result'],
+            experiment['average'][diff['symbol']]['result'] if diff['symbol'] in experiment['average'] \
+                else common[diff['symbol']]['result'],
             diff['result']
         )))
         doc.append('\n')
@@ -188,22 +190,29 @@ def print_formula(doc: pylatex.Document, formula: str, experiment: dict):
     )))
 
 
-def print_indirect_measurements(doc: pylatex.Document, experiment: dict):
+def print_indirect_measurements(doc: pylatex.Document, experiment: dict, common: dict):
     for formula in experiment['formulas'].keys():
         with doc.create(pylatex.Subsubsection(NoEscape('Calculating \( %s \)' % formula))):
-            print_formula(doc, formula, experiment)
+            print_formula(doc, formula, experiment,common)
 
-def print_experiment(doc: pylatex.Document, experiment: dict):
+
+def print_experiment(doc: pylatex.Document, experiment: dict, common: dict):
     with doc.create(pylatex.Section('Experiment')):
         with doc.create(pylatex.Subsection('Direct measurements')):
             print_direct_measurements(doc, experiment['average'])
         with doc.create(pylatex.Subsection('Indirect measurements')):
-            print_indirect_measurements(doc, experiment)
+            print_indirect_measurements(doc, experiment, common)
 
 
-def print_lab(results: list):
+def print_common_measurements(doc: pylatex.Document, results: dict):
+    with doc.create(pylatex.Section('Common')):
+        with doc.create(pylatex.Subsection('Direct measurements')):
+            print_direct_measurements(doc, results['common'])
+
+def print_lab(results: dict):
     doc = pylatex.Document('Report', lmodern=False, textcomp=False, inputenc=None, fontenc=None, page_numbers=False)
-    for experiment in results:
-        print_experiment(doc, experiment)
+    print_common_measurements(doc, results)
+    for experiment in results['result']:
+        print_experiment(doc, experiment, results['common'])
     doc.generate_tex('/home/eugene/1.tex')
     doc.generate_pdf('/home/eugene/1.pdf', clean_tex=True)
