@@ -2,6 +2,11 @@ import sympy
 import pylatex
 from pylatex.utils import NoEscape
 
+# Used to round to N significant digits
+def round_to_n(x, n):
+    string = ("%." + str(n-1) + "e") % x
+    return float(string)
+
 
 def print_short_direct_measurement(doc: pylatex.Document, variable: sympy.Symbol, measurement):
     doc.append(NoEscape(r'\( %s_{vid}=%s \)' % (sympy.latex(variable), measurement['result'])))
@@ -131,7 +136,7 @@ def print_direct_measurements(doc: pylatex.Document, measurements: dict):
 
 
 def print_formula(doc: pylatex.Document, formula: str, experiment: dict):
-    print(experiment)
+    rnd = lambda x: round_to_n(x, experiment['round']) if 'round' in experiment else x
     result = experiment['formulas'][formula]
     doc.append(NoEscape(r'\( %s=%s \)' % (sympy.latex(formula), sympy.latex(result['formula']))))
     doc.append('\n')
@@ -160,7 +165,7 @@ def print_formula(doc: pylatex.Document, formula: str, experiment: dict):
     src += '}=\sqrt{'
     for index, diff in enumerate(result['differentials']):
         src += '%s' % (
-            diff['result']**2
+            rnd(diff['result']**2)
         )
         if index + 1 < len(result['differentials']):
             src += '+'

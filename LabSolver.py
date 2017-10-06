@@ -1,5 +1,5 @@
 # Physics lab solver
-# Author: Eugene aka Father
+# Author: Eugene Protopopov
 # License: WTFPL
 #
 # You should edit only main function on the bottom of the file
@@ -10,6 +10,11 @@ import sympy
 from scipy.stats import t as student
 from LabPrinter import print_lab
 
+
+# Used to round to N significant digits
+def round_to_n(x, n):
+    string = ("%." + str(n-1) + "e") % x
+    return float(string)
 
 # Students t-distribution calculator
 # I am not a mathematician so I don't have a clue how
@@ -22,22 +27,23 @@ def eval_student(B: float, n: int):
 def long_evaluate_average(source: ([float], float),
                           variable: sympy.Symbol,
                           settings: dict):
-    source_vals = source[0]
-    error = source[1]
-    average = sum(source_vals) / len(source_vals)
-    S = math.sqrt(sum([(x-average)**2 for x in source_vals]) / (len(source_vals) * (len(source_vals) - 1)))
+    rnd = lambda x: round_to_n(x, settings['round']) if 'round' in settings else x
+    source_vals = [rnd(val) for val in source[0]]
+    error = rnd(source[1])
+    average = rnd(sum(source_vals) / len(source_vals))
+    S = rnd(math.sqrt(sum([(x-average)**2 for x in source_vals]) / (len(source_vals) * (len(source_vals) - 1))))
     B = settings['B']
-    tB_from_N = eval_student(B, len(source_vals))
-    tB_from_Inf = eval_student(B, 10000) # 10000 measurements is almost infinity for our case
-    delta_Xs = S * tB_from_N
-    delta_Xd = error / 3 * tB_from_Inf
+    tB_from_N = rnd(eval_student(B, len(source_vals)))
+    tB_from_Inf = rnd(eval_student(B, 10000)) # 10000 measurements is almost infinity for our case
+    delta_Xs = rnd(S * tB_from_N)
+    delta_Xd = rnd(error / 3 * tB_from_Inf)
     if delta_Xs > 3 * delta_Xd:
         delta_X = delta_Xs
     elif delta_Xd > 3 * delta_Xs:
         delta_X = delta_Xd
     else:
-        delta_X = math.sqrt(delta_Xs**2 + delta_Xd**2)
-    epsilon = delta_X / average * 100
+        delta_X = rnd(math.sqrt(delta_Xs**2 + delta_Xd**2))
+    epsilon = rnd(delta_X / average * 100)
     result = {
         'result': average,
         'error': delta_X,
@@ -62,12 +68,13 @@ def long_evaluate_average(source: ([float], float),
 
 # Evaluates average value and error for variables with only one measurement
 def short_evaluate_average(source: ([float], float), variable: sympy.Symbol, settings: dict):
-    average = source[0][0]
-    error = source[1]
+    rnd = lambda x: round_to_n(x, settings['round']) if 'round' in settings else x
+    average = rnd(source[0][0])
+    error = rnd(source[1])
     B = settings['B']
-    tB_from_Inf = eval_student(B, 10000)
-    delta_X = error / 3 * tB_from_Inf
-    epsilon = delta_X / average * 100
+    tB_from_Inf = rnd(eval_student(B, 10000))
+    delta_X = rnd(error / 3 * tB_from_Inf)
+    epsilon = rnd(delta_X / average * 100)
     result = {
         'result': average,
         'error': delta_X,
@@ -100,15 +107,16 @@ def evaluate_partial_error(formula: sympy.Expr,
                            values: {sympy.Symbol: float},
                            avg_results: {sympy.Symbol: {str: float}},
                            settings: dict):
-    differential = formula.diff(variable).evalf(subs=values)
+    rnd = lambda x: round_to_n(x, settings['round']) if 'round' in settings else x
+    differential = rnd(formula.diff(variable).evalf(subs=values))
     result = {
-        'result': differential * avg_results[variable]['error']
+        'result': rnd(differential * avg_results[variable]['error'])
     }
     if settings['extended']:
         result['symbol'] = variable
         result['differential'] = formula.diff(variable)
         result['differential_value'] = differential
-        result['partial_error'] = avg_results[variable]['error']
+        result['partial_error'] = rnd(avg_results[variable]['error'])
     return result
 
 
@@ -117,15 +125,16 @@ def evaluate_formula(formula: sympy.Expr,
                      avg_results: {sympy.Symbol: {str: float}},
                      constants: {sympy.Symbol: float},
                      settings: dict):
+    rnd = lambda x: round_to_n(x, settings['round']) if 'round' in settings else x
     values = dict()
     for variable in avg_results.keys():
         values[variable] = avg_results[variable]['result']
     for variable in constants.keys():
         values[variable] = constants[variable]
-    result = formula.evalf(subs=values)
+    result = rnd(formula.evalf(subs=values))
     differentials = [evaluate_partial_error(formula, variable, values, avg_results, settings) for variable in avg_results.keys()]
-    delta = math.sqrt(sum(partial['result']**2 for partial in differentials))
-    epsilon = delta / result * 100
+    delta = rnd(math.sqrt(sum(partial['result']**2 for partial in differentials)))
+    epsilon = rnd(delta / result * 100)
     data = {
         'result': result,
         'delta': delta,
@@ -154,6 +163,8 @@ def evaluate_experiment(formulas: [(str, sympy.Expr)],
     }
     for formula in formulas:
         results['formulas'][formula[0]] = evaluate_formula(formula[1], avg_results, constants, settings)
+    if settings['extended'] and settings['round']:
+        results['round'] = settings['round']
     return results
 
 
@@ -185,8 +196,8 @@ def main():
     # first block and tuple
     # Tuple consists of measurement result array and measurement instrument error
     experiments = [
-        {I: ([1.5], 0.025),
-         phi: ([65,64], 0.25),
+        {I: ([1], 0.025),
+         phi: ([22, 24], 1),
          R: ([0.18], 0.005)}
     ]
 
@@ -199,7 +210,8 @@ def main():
     # Just some settings. Currently only B value
     settings = {
         'B': 0.95,
-        'extended': True
+        'extended': True,
+        'round': 4
     }
 
     # Evaluate that!
