@@ -105,6 +105,7 @@ def evaluate_partial_error(formula: sympy.Expr,
         'result': differential * avg_results[variable]['error']
     }
     if settings['extended']:
+        result['symbol'] = variable
         result['differential'] = formula.diff(variable)
         result['differential_value'] = differential
         result['partial_error'] = avg_results[variable]['error']
@@ -134,6 +135,7 @@ def evaluate_formula(formula: sympy.Expr,
         data['formula'] = formula
         data['differentials'] = differentials
         data['values'] = values
+        data['B'] = settings['B']
     return data
 
 
@@ -147,10 +149,11 @@ def evaluate_experiment(formulas: [(str, sympy.Expr)],
     for variable in experiment.keys():
         avg_results[variable] = evaluate_average_result(experiment, variable, settings)
     results = {
-        'average': avg_results
+        'average': avg_results,
+        'formulas': dict()
     }
     for formula in formulas:
-        results[formula[0]] = evaluate_formula(formula[1], avg_results, constants, settings)
+        results['formulas'][formula[0]] = evaluate_formula(formula[1], avg_results, constants, settings)
     return results
 
 
@@ -175,7 +178,7 @@ def main():
     # Define used formulas using variables from above block
     # And add them to formula list
     B = (mu * n * I) / (2 * R * sympy.tan(sympy.rad(phi)))
-    formulas = [('B', B)]   # Tuple: formula name, formula
+    formulas = [(sympy.symbols('B'), B)]   # Tuple: formula name, formula
 
     # Define results of all your measurements
     # Each measurement is dictionary which keys are variables from

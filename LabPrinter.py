@@ -38,7 +38,6 @@ def print_short_direct_measurement(doc: pylatex.Document, variable: sympy.Symbol
 
 
 def print_long_direct_measurement(doc: pylatex.Document, variable: sympy.Symbol, measurement):
-    print('%s %s' % (variable, measurement))
     variable_latex = sympy.latex(variable)
     doc.append(NoEscape(r'\( %s_{vid}=\frac{1}{n}\displaystyle\sum_{i=1}^{n} %s_{i}=\frac{' % (
         variable_latex, variable_latex
@@ -114,7 +113,7 @@ def print_long_direct_measurement(doc: pylatex.Document, variable: sympy.Symbol,
     )))
     doc.append('\n')
 
-    doc.append(NoEscape(r'\( %s=(%s \pm %s) \) \( \varepsilon=%s\%% \) pie \( {\beta}=%s \)' % (
+    doc.append(NoEscape(r'\( %s=(%s \pm %s) \) \( \varepsilon=%s\%% \) on \( {\beta}=%s \)' % (
         sympy.latex(variable),
         measurement['result'], delta_X,
         measurement['epsilon'], distrib['B']
@@ -131,17 +130,75 @@ def print_direct_measurements(doc: pylatex.Document, measurements: dict):
                 print_long_direct_measurement(doc, variable, measurement)
 
 
+def print_formula(doc: pylatex.Document, formula: str, experiment: dict):
+    print(experiment)
+    result = experiment['formulas'][formula]
+    doc.append(NoEscape(r'\( %s=%s \)' % (sympy.latex(formula), sympy.latex(result['formula']))))
+    doc.append('\n')
+
+    for diff in result['differentials']:
+        doc.append(NoEscape(r'\( \Delta %s_{%s}=\frac{\delta %s}{\delta %s}*\Delta %s=%s*%s=%s*%s=%s \)' % (
+            sympy.latex(formula), sympy.latex(diff['symbol']),
+            sympy.latex(formula), sympy.latex(diff['symbol']),
+            sympy.latex(diff['symbol']),
+            sympy.latex(diff['differential']),
+            experiment['average'][diff['symbol']]['result'],
+            diff['differential_value'],
+            experiment['average'][diff['symbol']]['result'],
+            diff['result']
+        )))
+        doc.append('\n')
+
+    src = '\( \Delta %s=\sqrt{' % sympy.latex(formula)
+    doc.append(NoEscape())
+    for index, diff in enumerate(result['differentials']):
+        src += '\Delta %s_{%s}^2' % (
+            sympy.latex(formula), sympy.latex(diff['symbol'])
+        )
+        if index + 1 < len(result['differentials']):
+            src += '+'
+    src += '}=\sqrt{'
+    for index, diff in enumerate(result['differentials']):
+        src += '%s' % (
+            diff['result']**2
+        )
+        if index + 1 < len(result['differentials']):
+            src += '+'
+    src += '}=%s \)' % result['delta']
+
+    doc.append(NoEscape(src))
+    doc.append('\n')
+
+    doc.append(NoEscape(r'\( \varepsilon=\frac{\Delta %s}{%s_{vid}}*100\%%=\frac{%s}{%s}*100\%%=%s\%% \)' % (
+        sympy.latex(formula), sympy.latex(formula),
+        result['delta'], result['result'],
+        result['epsilon']
+    )))
+    doc.append('\n')
+
+    doc.append(NoEscape(r'\( %s=(%s \pm %s) \) \( \varepsilon=%s\%% \) on \( {\beta}=%s \)' % (
+        sympy.latex(formula),
+        result['result'], result['delta'],
+        result['epsilon'], result['B']
+    )))
+
+
+def print_indirect_measurements(doc: pylatex.Document, experiment: dict):
+    for formula in experiment['formulas'].keys():
+        with doc.create(pylatex.Subsubsection(NoEscape('Calculating \( %s \)' % formula))):
+            print_formula(doc, formula, experiment)
+
 def print_experiment(doc: pylatex.Document, experiment: dict):
     with doc.create(pylatex.Section('Experiment')):
         with doc.create(pylatex.Subsection('Direct measurements')):
             print_direct_measurements(doc, experiment['average'])
         with doc.create(pylatex.Subsection('Indirect measurements')):
-            pass
+            print_indirect_measurements(doc, experiment)
 
 
 def print_lab(results: list):
-    doc = pylatex.Document('Report')
+    doc = pylatex.Document('Report', lmodern=False, textcomp=False, inputenc=None, fontenc=None, page_numbers=False)
     for experiment in results:
         print_experiment(doc, experiment)
-    doc.generate_pdf('/home/eugene/1.pdf')
     doc.generate_tex('/home/eugene/1.tex')
+    doc.generate_pdf('/home/eugene/1.pdf', clean_tex=True)
