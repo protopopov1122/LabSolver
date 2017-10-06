@@ -1,6 +1,5 @@
 import sympy
-import pylatex
-from pylatex.utils import NoEscape
+import io
 
 # Used to round to N significant digits
 def round_to_n(x, n):
@@ -8,141 +7,144 @@ def round_to_n(x, n):
     return float(string)
 
 
-def print_short_direct_measurement(doc: pylatex.Document, variable: sympy.Symbol, measurement):
-    doc.append(NoEscape(r'\( %s_{av}=%s \)' % (sympy.latex(variable), measurement['result'])))
-    doc.append('\n')
+def print_short_direct_measurement(doc: io.StringIO, variable: sympy.Symbol, measurement):
+    doc.write((r'\( %s_{av}=%s \)' % (sympy.latex(variable), measurement['result'])))
+    doc.write('\n\n')
 
-    doc.append(NoEscape(r'\( \delta_{%s}=%s \)' % (format(variable), measurement['measurement_error'])))
-    doc.append('\n')
+    doc.write((r'\( \delta_{%s}=%s \)' % (format(variable), measurement['measurement_error'])))
+    doc.write('\n\n')
 
-    doc.append(NoEscape(r'\( {\beta}=%s \) \( t_{\beta}(\infty)=%s\)' % (
+    doc.write((r'\( {\beta}=%s \) \( t_{\beta}(\infty)=%s\)' % (
         measurement['distrib']['B'], measurement['distrib']['tB_Inf']
     )))
-    doc.append('\n')
+    doc.write('\n\n')
 
-    doc.append(NoEscape(r'\( \Delta %s=\frac{\delta %s}{3}*t_{\beta}(\infty)=\frac{%s}{3}*%s=%s \)' % (
+    doc.write((r'\( \Delta %s=\frac{\delta %s}{3}*t_{\beta}(\infty)=\frac{%s}{3}*%s=%s \)' % (
         sympy.latex(variable), sympy.latex(variable),
         measurement['measurement_error'],
         measurement['distrib']['tB_Inf'],
         measurement['error']
     )))
-    doc.append('\n')
+    doc.write('\n\n')
 
-    doc.append(NoEscape(r'\( \varepsilon=\frac{\Delta %s}{%s_{av}}*100\%%=\frac{%s}{%s}*100\%%=%s\%% \)' % (
+    doc.write((r'\( \varepsilon=\frac{\Delta %s}{%s_{av}}*100\%%=\frac{%s}{%s}*100\%%=%s\%% \)' % (
         sympy.latex(variable), sympy.latex(variable),
         measurement['error'], measurement['result'],
         measurement['epsilon']
     )))
-    doc.append('\n')
+    doc.write('\n\n')
 
-    doc.append(NoEscape(r'\( %s=(%s \pm %s) \) \( \varepsilon=%s\%% \) on \( {\beta}=%s \)' % (
+    doc.write((r'\( %s=(%s \pm %s) \) \( \varepsilon=%s\%% \) on \( {\beta}=%s \)' % (
         sympy.latex(variable),
         measurement['result'], measurement['error'],
         measurement['epsilon'], measurement['distrib']['B']
     )))
 
 
-def print_long_direct_measurement(doc: pylatex.Document, variable: sympy.Symbol, measurement):
+def print_long_direct_measurement(doc: io.StringIO, variable: sympy.Symbol, measurement):
     variable_latex = sympy.latex(variable)
-    doc.append(NoEscape(r'\( %s_{av}=\frac{1}{n}\displaystyle\sum_{i=1}^{n} %s_{i}=\frac{' % (
+    doc.write((r'\( %s_{av}=\frac{1}{n}\displaystyle\sum_{i=1}^{n} %s_{i}=\frac{' % (
         variable_latex, variable_latex
     )))
     meas = measurement['measurements']
     for index, source_val in enumerate(meas):
-        doc.append(source_val)
+        doc.write(str(source_val))
         if index + 1 < len(meas):
-            doc.append('+')
-    doc.append(NoEscape(r'}{%s}=\frac{%s}{%s}=%s \)' % (len(meas),
+            doc.write('+')
+    doc.write((r'}{%s}=\frac{%s}{%s}=%s \)' % (len(meas),
                                              format(sum(meas)),
                                              format(len(meas)),
                                              format(measurement['result']))))
-    doc.append('\n')
+    doc.write('\n\n')
 
-    doc.append(NoEscape(r'\( S_{%s}=\sqrt{\frac{\displaystyle\sum_{i=1}^{n} (%s_{i} - %s_{av})^2}{n*(n-1)}}=\sqrt{\frac{' % (
+    doc.write((r'\( S_{%s}=\sqrt{\frac{\displaystyle\sum_{i=1}^{n} (%s_{i} - %s_{av})^2}{n*(n-1)}}=\sqrt{\frac{' % (
         variable_latex, variable_latex, variable_latex
     )))
     for index, source_val in enumerate(meas):
-        doc.append(NoEscape('%s^2' % (source_val - measurement['result'])))
+        doc.write(('%s^2' % (source_val - measurement['result'])))
         if index + 1 < len(meas):
-            doc.append('+')
-    doc.append(NoEscape('}{%s*%s}}=%s \)' % (
+            doc.write('+')
+    doc.write(('}{%s*%s}}=%s \)' % (
         len(meas), len(meas) - 1, measurement['S']
     )))
-    doc.append('\n')
+    doc.write('\n\n')
 
     distrib = measurement['distrib']
-    doc.append(NoEscape(r'\( {\beta}=%s \) \( t_{\beta}(%s)=%s \) \( t_{\beta}(\infty)=%s\)' % (
+    doc.write((r'\( {\beta}=%s \) \( t_{\beta}(%s)=%s \) \( t_{\beta}(\infty)=%s\)' % (
         distrib['B'], len(meas), distrib['tB_N'], distrib['tB_Inf']
     )))
-    doc.append('\n')
+    doc.write('\n\n')
 
-    doc.append(NoEscape(r'\( \Delta %s_{S}=S_{%s}*t_{\beta}(n)=%s*%s=%s \)' % (
+    doc.write((r'\( \Delta %s_{S}=S_{%s}*t_{\beta}(n)=%s*%s=%s \)' % (
         variable_latex, variable_latex,
         measurement['S'], distrib['tB_N'], measurement['delta']['XS']
     )))
-    doc.append('\n')
+    doc.write('\n\n')
 
-    doc.append(NoEscape(r'\( \Delta %s_{\delta}=\frac{\delta %s}{3}*t_{\beta}(\infty)=\frac{%s}{3}*%s=%s \)' % (
+    doc.write((r'\( \Delta %s_{\delta}=\frac{\delta %s}{3}*t_{\beta}(\infty)=\frac{%s}{3}*%s=%s \)' % (
         variable_latex, variable_latex,
         measurement['measurement_error'], distrib['tB_Inf'],
         measurement['delta']['XD']
     )))
-    doc.append('\n')
+    doc.write('\n\n')
 
     delta_Xs = measurement['delta']['XS']
     delta_Xd = measurement['delta']['XD']
     delta_X = measurement['error']
     if delta_Xs > 3 * delta_Xd:
-        doc.append(NoEscape(r'\( \Delta %s_{S}>3*\Delta %s_{\delta} \Rightarrow \Delta %s=\Delta %s_{S}=%s \)' % (
+        doc.write((r'\( \Delta %s_{S}>3*\Delta %s_{\delta} \Rightarrow \Delta %s=\Delta %s_{S}=%s \)' % (
             variable_latex, variable_latex,
             variable_latex, variable_latex,
             delta_X
         )))
     elif delta_Xd > 3 * delta_Xs:
-        doc.append(NoEscape(r'\( \Delta %s_{\delta}>3*\Delta %s_{S} \Rightarrow \Delta %s=\Delta %s_{\delta}=%s \)' % (
+        doc.write((r'\( \Delta %s_{\delta}>3*\Delta %s_{S} \Rightarrow \Delta %s=\Delta %s_{\delta}=%s \)' % (
             variable_latex, variable_latex,
             format(variable), variable_latex,
             delta_X
         )))
     else:
-        doc.append(NoEscape(r'\( \Delta %s=\sqrt{%s_{S}^2+%s_{\delta}^2}=\sqrt{%s^2+%s^2}=%s \)' % (
+        doc.write((r'\( \Delta %s=\sqrt{%s_{S}^2+%s_{\delta}^2}=\sqrt{%s^2+%s^2}=%s \)' % (
             variable_latex, variable_latex, variable_latex,
             delta_Xs, delta_Xd, delta_X
         )))
-    doc.append('\n')
+    doc.write('\n\n')
 
-    doc.append(NoEscape(r'\( \varepsilon=\frac{\Delta %s}{%s_{av}}*100\%%=\frac{%s}{%s}*100\%%=%s\%% \)' % (
+    doc.write((r'\( \varepsilon=\frac{\Delta %s}{%s_{av}}*100\%%=\frac{%s}{%s}*100\%%=%s\%% \)' % (
         variable_latex, variable_latex,
         delta_X, measurement['result'],
         measurement['epsilon']
     )))
-    doc.append('\n')
+    doc.write('\n\n')
 
-    doc.append(NoEscape(r'\( %s=(%s \pm %s) \) \( \varepsilon=%s\%% \) on \( {\beta}=%s \)' % (
+    doc.write((r'\( %s=(%s \pm %s) \) \( \varepsilon=%s\%% \) on \( {\beta}=%s \)' % (
         sympy.latex(variable),
         measurement['result'], delta_X,
         measurement['epsilon'], distrib['B']
     )))
 
 
-def print_direct_measurements(doc: pylatex.Document, measurements: dict):
+def print_direct_measurements(doc: io.StringIO, measurements: dict):
     for variable in measurements.keys():
-        with doc.create(pylatex.Subsubsection(NoEscape(r'Calculating \( %s \)' % sympy.latex(variable)))):
-            measurement = measurements[variable]
-            if measurement['type'] == 'short':
-                print_short_direct_measurement(doc, variable, measurement)
-            else:
-                print_long_direct_measurement(doc, variable, measurement)
+        doc.write((r'\subsubsection{Calculating \( %s \)}' % sympy.latex(variable)))
+        doc.write('\n\n')
+        doc.write('\( \)')
+        doc.write('\n\n')
+        measurement = measurements[variable]
+        if measurement['type'] == 'short':
+            print_short_direct_measurement(doc, variable, measurement)
+        else:
+            print_long_direct_measurement(doc, variable, measurement)
 
 
-def print_formula(doc: pylatex.Document, formula: str, experiment: dict, common: dict):
+def print_formula(doc: io.StringIO, formula: str, experiment: dict, common: dict):
     rnd = lambda x: round_to_n(x, experiment['round']) if 'round' in experiment else x
     result = experiment['formulas'][formula]
-    doc.append(NoEscape(r'\( %s=%s \)' % (sympy.latex(formula), sympy.latex(result['formula']))))
-    doc.append('\n')
+    doc.write((r'\( %s=%s \)' % (sympy.latex(formula), sympy.latex(result['formula']))))
+    doc.write('\n\n')
 
     for diff in result['differentials']:
-        doc.append(NoEscape(r'\( \Delta %s_{%s}=\frac{\delta %s}{\delta %s}*\Delta %s=%s*%s=%s*%s=%s \)' % (
+        doc.write((r'\( \Delta %s_{%s}=\frac{\delta %s}{\delta %s}*\Delta %s=%s*%s=%s*%s=%s \)' % (
             sympy.latex(formula), sympy.latex(diff['symbol']),
             sympy.latex(formula), sympy.latex(diff['symbol']),
             sympy.latex(diff['symbol']),
@@ -154,10 +156,9 @@ def print_formula(doc: pylatex.Document, formula: str, experiment: dict, common:
                 else common[diff['symbol']]['result'],
             diff['result']
         )))
-        doc.append('\n')
+        doc.write('\n\n')
 
     src = '\( \Delta %s=\sqrt{' % sympy.latex(formula)
-    doc.append(NoEscape())
     for index, diff in enumerate(result['differentials']):
         src += '\Delta %s_{%s}^2' % (
             sympy.latex(formula), sympy.latex(diff['symbol'])
@@ -173,72 +174,91 @@ def print_formula(doc: pylatex.Document, formula: str, experiment: dict, common:
             src += '+'
     src += '}=%s \)' % result['delta']
 
-    doc.append(NoEscape(src))
-    doc.append('\n')
+    doc.write((src))
+    doc.write('\n\n')
 
-    doc.append(NoEscape(r'\( \varepsilon=\frac{\Delta %s}{%s_{av}}*100\%%=\frac{%s}{%s}*100\%%=%s\%% \)' % (
+    doc.write((r'\( \varepsilon=\frac{\Delta %s}{%s_{av}}*100\%%=\frac{%s}{%s}*100\%%=%s\%% \)' % (
         sympy.latex(formula), sympy.latex(formula),
         result['delta'], result['result'],
         result['epsilon']
     )))
-    doc.append('\n')
+    doc.write('\n\n')
 
-    doc.append(NoEscape(r'\( %s=(%s \pm %s) \) \( \varepsilon=%s\%% \) on \( {\beta}=%s \)' % (
+    doc.write((r'\( %s=(%s \pm %s) \) \( \varepsilon=%s\%% \) on \( {\beta}=%s \)' % (
         sympy.latex(formula),
         result['result'], result['delta'],
         result['epsilon'], result['B']
     )))
 
 
-def print_indirect_measurements(doc: pylatex.Document, experiment: dict, common: dict):
+def print_indirect_measurements(doc: io.StringIO, experiment: dict, common: dict):
     for formula in experiment['formulas'].keys():
-        with doc.create(pylatex.Subsubsection(NoEscape('Calculating \( %s \)' % formula))):
-            print_formula(doc, formula, experiment,common)
+        doc.write('\subsubsection{Calculating \( %s \)}' % formula)
+        doc.write('\n\n')
+        doc.write('\( \)')
+        doc.write('\n\n')
+        print_formula(doc, formula, experiment,common)
 
 
-def print_measurement_data(doc: pylatex.Document, experiment: dict, common: dict, constants: dict):
+def print_measurement_data(doc: io.StringIO, experiment: dict, common: dict, constants: dict):
     for variable in common.keys():
-        doc.append(NoEscape(r'\( %s=%s \pm %s \)' % (
+        doc.write((r'\( %s=%s \pm %s \)' % (
             sympy.latex(variable),
             common[variable]['result'],
             common[variable]['measurement_error']
         )))
-        doc.append('\n')
+        doc.write('\n\n')
 
     for variable in experiment['average'].keys():
-        doc.append(NoEscape(r'\( %s=%s \pm %s \)' % (
+        doc.write((r'\( %s=%s \pm %s \)' % (
             sympy.latex(variable),
             experiment['average'][variable]['result'],
             experiment['average'][variable]['measurement_error']
         )))
-        doc.append('\n')
+        doc.write('\n\n')
 
     for variable in constants.keys():
-        doc.append(NoEscape(r'\( %s=%s \)' % (
+        doc.write((r'\( %s=%s \)' % (
             sympy.latex(variable),
             constants[variable]
         )))
-        doc.append('\n')
+        doc.write('\n\n')
 
-def print_experiment(doc: pylatex.Document, experiment: dict, common: dict, constants: dict):
-    with doc.create(pylatex.Section('Experiment')):
-        with doc.create(pylatex.Subsection('Measurement data and constants')):
-            print_measurement_data(doc, experiment, common, constants)
-        with doc.create(pylatex.Subsection('Direct measurements')):
-            print_direct_measurements(doc, experiment['average'])
-        with doc.create(pylatex.Subsection('Indirect measurements')):
-            print_indirect_measurements(doc, experiment, common)
+def print_experiment(doc: io.StringIO, experiment: dict, common: dict, constants: dict):
+    doc.write('\n\n')
+    doc.write(r'\section{Experiment}')
+    doc.write('\n\n')
+    doc.write(r'\subsection{Measurement data and constants}')
+    doc.write('\n\n')
+    doc.write('\( \)')
+    doc.write('\n\n')
+    print_measurement_data(doc, experiment, common, constants)
+    doc.write(r'\subsection{Direct measurements}')
+    doc.write('\n\n')
+    print_direct_measurements(doc, experiment['average'])
+    doc.write(r'\subsection{Indirect measurements}')
+    doc.write('\n\n')
+    doc.write('\( \)')
+    doc.write('\n\n')
+    print_indirect_measurements(doc, experiment, common)
 
 
-def print_common_measurements(doc: pylatex.Document, results: dict):
-    with doc.create(pylatex.Section('Common')):
-        with doc.create(pylatex.Subsection('Direct measurements')):
-            print_direct_measurements(doc, results['common'])
+def print_common_measurements(doc: io.StringIO, results: dict):
+    doc.write('\section{Common}')
+    doc.write('\n\n')
+    doc.write('\subsection{Direct measurements}')
+    doc.write('\n\n')
+    print_direct_measurements(doc, results['common'])
 
 def print_lab(results: dict):
-    doc = pylatex.Document('Report', lmodern=False, textcomp=False, inputenc=None, fontenc=None, page_numbers=False)
-    print_common_measurements(doc, results)
+    output = io.StringIO()
+    output.write(r'\documentclass{article}')
+    output.write('\n\n')
+    output.write(r'\begin{document}')
+    output.write('\n\n')
+    print_common_measurements(output, results)
     for experiment in results['result']:
-        print_experiment(doc, experiment, results['common'], results['constants'])
-    doc.generate_tex('/home/eugene/1.tex')
-    doc.generate_pdf('/home/eugene/1.pdf', clean_tex=True)
+        print_experiment(output, experiment, results['common'], results['constants'])
+    output.write('\n\n')
+    output.write(r'\end{document}')
+    print(output.getvalue())
