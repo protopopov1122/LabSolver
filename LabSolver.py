@@ -183,7 +183,7 @@ def main():
     # Tuple consists of measurement result array and measurement instrument error
     experiments = [
         {I: ([1.5], 0.025),
-         phi: ([65, 1], 0.25),
+         phi: ([65,64], 0.25),
          R: ([0.18], 0.005)}
     ]
 
