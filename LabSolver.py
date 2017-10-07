@@ -3,18 +3,20 @@
 # License: WTFPL
 
 # This script is able to process physics lab measurements
-# and calculate some results. Generally, results may be displayed
+# and calculate some results and create report. Generally, results may be displayed
 # in two different ways: simple structure and TeX document
 # Use simple structure to view evaluation results or use
 # TeX document to get full report. TeX document may be converted
 # into PDF using online 'tex to pdf' services or LaTex package
 
-# Script is written on Python 3.
+# Script is written on Python 3. Configure it before run.
 # On Windows best way to get this work is using Python from Anaconda
-# distribution, on Linux just install sympy and scipy packages
+# distribution:
+# Run Anaconda Prompt->python->import LabSolver->LabSolver.main()
+# On Linux just install sympy and scipy packages and run this script
 
 # Now go to the 'main' function at the bottom and follow instructions
-# there
+# there to configure this script
 
 import math
 import sympy
@@ -247,7 +249,7 @@ def evaluate_tex_file(filename: str):
     return evl
 
 # Main function
-# Edit code there to define your measurements and formulas
+# Edit code there to define your measurements, formulas
 # and generate results
 def main():
     # Define used variables and constants
