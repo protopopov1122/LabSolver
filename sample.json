@@ -1,0 +1,21 @@
+{
+  "variables": ["phi", "n", "I", "R", "mu"],
+  "constants": {
+    "n": 3,
+    "mu": 12.57e-7
+  },
+  "formulas": {
+    "B": "(mu*n*I)/(2*R*tan(rad(phi)))"
+  },
+  "common": {
+    "R": [[18], 0.005]
+  },
+  "measurements": [
+    {"I": [[1], 0.025],
+     "phi": [[22, 24], 1]}
+  ],
+  "settings": {
+    "B": 0.95,
+    "round": 4
+  }
+}
