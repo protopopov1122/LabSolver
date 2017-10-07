@@ -9,19 +9,29 @@
 # TeX document to get full report. TeX document may be converted
 # into PDF using online 'tex to pdf' services or LaTex package
 
+# There are two ways to run this script:
+#   * Command line interface - run without command line arguments.
+#       It's quite easy but not flexible. Also if you want to
+#       run script multiple times with same data, it's not the best
+#       scenario.
+#   * Custom main function - run with argument 'custom'
+
 # Script is written on Python 3. Configure it before run.
 # On Windows best way to get this work is using Python from Anaconda
 # distribution:
-# Run Anaconda Prompt->python->import LabSolver->LabSolver.main()
+# Run Anaconda Prompt->python->import LabSolver->LabSolver.custom_main() or simply main()
 # On Linux just install sympy and scipy packages and run this script
 
-# Now go to the 'main' function at the bottom and follow instructions
+# To define custom main:
+# Now go to the 'custom_main' function at the bottom and follow instructions
 # there to configure this script
 
 import math
 import sympy
+import sys
 from scipy.stats import t as student
 from LabPrinter import print_lab
+from LabParser import parse
 
 
 # Used to round to N significant digits
@@ -248,10 +258,11 @@ def evaluate_tex_file(filename: str):
         out.close()
     return evl
 
-# Main function
+
+# Custom main function
 # Edit code there to define your measurements, formulas
 # and generate results
-def main():
+def custom_main():
     # Define used variables and constants
     phi = sympy.symbols('phi')
     R = sympy.symbols('R')
@@ -326,5 +337,30 @@ def main():
     # result = evaluate(formulas, common_measurements, experiments, constants, settings)
 
 
+def main():
+    formulas, common, experiments, constants, settings = parse()
+    while True:
+        line = input('Select result save display type:\n'
+                     '1. Display brief results\n'
+                     '2. Display TeX markup\n'
+                     '3. Save TeX markup to file - Recommended\n'
+                     '>>> ')
+        if line == '1':
+            print(evaluate(formulas, common, experiments, constants, settings))
+            break
+        elif line == '2':
+            settings['extended'] = True
+            print(print_lab(evaluate(formulas, common, experiments, constants, settings)))
+            break
+        elif line == '3':
+            fname = input('Enter file name: ')
+            evaluate_tex_file(fname)(formulas, common, experiments, constants, settings)
+            break
+        else:
+            print('There is not option \'%s\'' % line)
+
 if __name__ == '__main__':
-    main()
+    if len(sys.argv) > 1 and sys.argv[1] == 'custom':
+        custom_main()
+    else:
+        main()
