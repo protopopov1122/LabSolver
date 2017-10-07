@@ -140,7 +140,7 @@ def print_direct_measurements(doc, measurements: dict):
 def print_formula(doc, formula: str, experiment: dict, common: dict):
     rnd = lambda x: round_to_n(x, experiment['round']) if 'round' in experiment else x
     result = experiment['formulas'][formula]
-    doc.write((r'\( %s=%s \)' % (sympy.latex(formula), sympy.latex(result['formula']))))
+    doc.write((r'\( %s=%s=%s \)' % (sympy.latex(formula), sympy.latex(result['formula']), result['result'])))
     doc.write('\n\n')
 
     for diff in result['differentials']:
@@ -249,6 +249,7 @@ def print_common_measurements(doc, results: dict):
     doc.write('\subsection{Direct measurements}')
     doc.write('\n\n')
     print_direct_measurements(doc, results['common'])
+
 
 def print_lab(results: dict, output = None):
     if output is None:
