@@ -45,6 +45,7 @@ def main(path: str, action: str):
     else:
         with open(action, 'w') as fp:
             print_lab(result, fp)
+        print('Saved report to file \'%s\'. Now you may use any TeX to PDF converter to get PDF.' % action)
 
 
 if __name__ == '__main__':
