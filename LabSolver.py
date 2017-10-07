@@ -1,9 +1,20 @@
 # Physics lab solver
 # Author: Eugene Protopopov
 # License: WTFPL
-#
-# You should edit only main function on the bottom of the file
-# and then run it
+
+# This script is able to process physics lab measurements
+# and calculate some results. Generally, results may be displayed
+# in two different ways: simple structure and TeX document
+# Use simple structure to view evaluation results or use
+# TeX document to get full report. TeX document may be converted
+# into PDF using online 'tex to pdf' services or LaTex package
+
+# Script is written on Python 3.
+# On Windows best way to get this work is using Python from Anaconda
+# distribution, on Linux just install sympy and scipy packages
+
+# Now go to the 'main' function at the bottom and follow instructions
+# there
 
 import math
 import sympy
@@ -199,8 +210,45 @@ def evaluate(formulas: [(str, sympy.Expr)],
     return result
 
 
+# Print results
+def evaluate_print(formulas: [(str, sympy.Expr)],
+                 common_measurements: {sympy.Symbol: ([float], float)},
+                 experiments: [{sympy.Symbol: ([float], float)}],
+                 constants: {sympy.Symbol: float},
+                 settings: dict):
+    settings['extended'] = False
+    result = evaluate(formulas, common_measurements, experiments, constants, settings)
+    print(result)
+
+# TeX to console
+def evaluate_tex_stdout(formulas: [(str, sympy.Expr)],
+             common_measurements: {sympy.Symbol: ([float], float)},
+             experiments: [{sympy.Symbol: ([float], float)}],
+             constants: {sympy.Symbol: float},
+             settings: dict):
+    settings['extended'] = True
+    result = evaluate(formulas, common_measurements, experiments, constants, settings)
+    print(print_lab(result))
+
+
+# TeX to file
+def evaluate_tex_file(filename: str):
+    def evl(formulas: [(str, sympy.Expr)],
+             common_measurements: {sympy.Symbol: ([float], float)},
+             experiments: [{sympy.Symbol: ([float], float)}],
+             constants: {sympy.Symbol: float},
+             settings: dict):
+        settings['extended'] = True
+        result = evaluate(formulas, common_measurements, experiments, constants, settings)
+        out = open(filename, 'w')
+        print_lab(result, out)
+        out.flush()
+        out.close()
+    return evl
+
 # Main function
-# Change only this code to evaluate lab
+# Edit code there to define your measurements and formulas
+# and generate results
 def main():
     # Define used variables and constants
     phi = sympy.symbols('phi')
@@ -209,16 +257,20 @@ def main():
     n = sympy.symbols('n')
     mu = sympy.symbols('mu')
 
-    # Define used formulas using variables from above block
-    # And add them to formula list
+    # Define formulas using variables from above block
+    # And add them to the formula list
+    # These formulas will be applied to all your experiments
     B = (mu * n * I) / (2 * R * sympy.tan(sympy.rad(phi)))
     formulas = [(sympy.symbols('B'), B)]   # Tuple: formula name, formula
 
-    # Define results of all your measurements
-    # Each measurement is dictionary which keys are variables from
-    # first block and tuple
-    # Tuple consists of measurement result array and measurement instrument error
+    # Define results of all your experiments
+    # 'Experiment' consists of multiple variable measurements
+    # Each variable measurement consists of value array and precision
+
+    # Common measurements are performed one time and then used in all calculations
     common_measurements = {R: ([0.18], 0.005)}
+
+    # Describe your measurements, formulas will be applied to each of them
     experiments = [
         {I: ([1], 0.025), phi: ([22, 24], 1)},
         {I: ([2.4], 0.025), phi: ([44, 46], 1)},
@@ -227,23 +279,49 @@ def main():
         {I: ([5], 0.025), phi: ([64], 1)}
     ]
 
-    # Define used constants. They don't have errors so are used as is
+    # Define used constants. They don't have precision so are used as is
     constants = {
         n: 3,
         mu: 12.57e-7
     }
 
-    # Just some settings. Currently only B value
+    # Each experiment + common measurements + constants must provide
+    # complete information to calculate each formula you defined
+    # Otherwise, it will not work
+
+    # Just some settings.
+    # You may remove 'round' parameter to get
+    # maximal precision
     settings = {
         'B': 0.95,
-        'extended': True,
+        'extended': False, # If you want to process results manually
+                           # switch 'extended' to True to be able to get complete info
         'round': 4
     }
 
-    # Evaluate that!
-    result = evaluate(formulas, common_measurements, experiments, constants, settings)
-    print(result)
-    print_lab(result)
+    # Calculate results and handle them four different ways
+    # Just uncomment one of them
+
+    # 1. Print only results as a Python structure
+    #    May be used just to view final experiment results
+    # evaluate_print(formulas, common_measurements, experiments, constants, settings)
+
+    # 2. Print results as TeX document to console
+    #    Not so useful, but you may copy results from console
+    #    See also option below this one
+    # evaluate_tex_stdout(formulas, common_measurements, experiments, constants, settings)
+
+    # 3. Save results as TeX document somewhere
+    #    In my opinion it's the best option to get complete visual report.
+    #    Do not forget to convert TeX to PDF via some external service
+    # evaluate_tex_file('some_file_name.tex')(formulas, common_measurements, experiments, constants, settings)
+
+    # 4. Do some custom processing
+    #    No results will be printed so you should
+    #    write some code to process them
+    #    The same structure is printed on type 1, except for 'extended' flag,
+    #    you may redefine it
+    # result = evaluate(formulas, common_measurements, experiments, constants, settings)
 
 
 if __name__ == '__main__':

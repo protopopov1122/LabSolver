@@ -7,7 +7,7 @@ def round_to_n(x, n):
     return float(string)
 
 
-def print_short_direct_measurement(doc: io.StringIO, variable: sympy.Symbol, measurement):
+def print_short_direct_measurement(doc, variable: sympy.Symbol, measurement):
     doc.write((r'\( %s_{av}=%s \)' % (sympy.latex(variable), measurement['result'])))
     doc.write('\n\n')
 
@@ -41,7 +41,7 @@ def print_short_direct_measurement(doc: io.StringIO, variable: sympy.Symbol, mea
     )))
 
 
-def print_long_direct_measurement(doc: io.StringIO, variable: sympy.Symbol, measurement):
+def print_long_direct_measurement(doc, variable: sympy.Symbol, measurement):
     variable_latex = sympy.latex(variable)
     doc.write((r'\( %s_{av}=\frac{1}{n}\displaystyle\sum_{i=1}^{n} %s_{i}=\frac{' % (
         variable_latex, variable_latex
@@ -124,7 +124,7 @@ def print_long_direct_measurement(doc: io.StringIO, variable: sympy.Symbol, meas
     )))
 
 
-def print_direct_measurements(doc: io.StringIO, measurements: dict):
+def print_direct_measurements(doc, measurements: dict):
     for variable in measurements.keys():
         doc.write((r'\subsubsection{Calculating \( %s \)}' % sympy.latex(variable)))
         doc.write('\n\n')
@@ -137,7 +137,7 @@ def print_direct_measurements(doc: io.StringIO, measurements: dict):
             print_long_direct_measurement(doc, variable, measurement)
 
 
-def print_formula(doc: io.StringIO, formula: str, experiment: dict, common: dict):
+def print_formula(doc, formula: str, experiment: dict, common: dict):
     rnd = lambda x: round_to_n(x, experiment['round']) if 'round' in experiment else x
     result = experiment['formulas'][formula]
     doc.write((r'\( %s=%s \)' % (sympy.latex(formula), sympy.latex(result['formula']))))
@@ -191,7 +191,7 @@ def print_formula(doc: io.StringIO, formula: str, experiment: dict, common: dict
     )))
 
 
-def print_indirect_measurements(doc: io.StringIO, experiment: dict, common: dict):
+def print_indirect_measurements(doc, experiment: dict, common: dict):
     for formula in experiment['formulas'].keys():
         doc.write('\subsubsection{Calculating \( %s \)}' % formula)
         doc.write('\n\n')
@@ -200,7 +200,7 @@ def print_indirect_measurements(doc: io.StringIO, experiment: dict, common: dict
         print_formula(doc, formula, experiment,common)
 
 
-def print_measurement_data(doc: io.StringIO, experiment: dict, common: dict, constants: dict):
+def print_measurement_data(doc, experiment: dict, common: dict, constants: dict):
     for variable in common.keys():
         doc.write((r'\( %s=%s \pm %s \)' % (
             sympy.latex(variable),
@@ -224,7 +224,7 @@ def print_measurement_data(doc: io.StringIO, experiment: dict, common: dict, con
         )))
         doc.write('\n\n')
 
-def print_experiment(doc: io.StringIO, experiment: dict, common: dict, constants: dict):
+def print_experiment(doc, experiment: dict, common: dict, constants: dict):
     doc.write('\n\n')
     doc.write(r'\section{Experiment}')
     doc.write('\n\n')
@@ -243,15 +243,19 @@ def print_experiment(doc: io.StringIO, experiment: dict, common: dict, constants
     print_indirect_measurements(doc, experiment, common)
 
 
-def print_common_measurements(doc: io.StringIO, results: dict):
+def print_common_measurements(doc, results: dict):
     doc.write('\section{Common}')
     doc.write('\n\n')
     doc.write('\subsection{Direct measurements}')
     doc.write('\n\n')
     print_direct_measurements(doc, results['common'])
 
-def print_lab(results: dict):
-    output = io.StringIO()
+def print_lab(results: dict, output = None):
+    if output is None:
+        output = io.StringIO()
+        retout =  True
+    else:
+        retout = False
     output.write(r'\documentclass{article}')
     output.write('\n\n')
     output.write(r'\begin{document}')
@@ -261,4 +265,5 @@ def print_lab(results: dict):
         print_experiment(output, experiment, results['common'], results['constants'])
     output.write('\n\n')
     output.write(r'\end{document}')
-    print(output.getvalue())
+    if retout:
+        return output.getvalue()
