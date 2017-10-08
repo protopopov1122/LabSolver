@@ -152,8 +152,8 @@ def print_formula(doc, formula: str, experiment: dict, common: dict):
             experiment['average'][diff['symbol']]['error'] if diff['symbol'] in experiment['average'] \
                 else common[diff['symbol']]['error'],
             diff['differential_value'],
-            experiment['average'][diff['symbol']]['result'] if diff['symbol'] in experiment['average'] \
-                else common[diff['symbol']]['result'],
+            experiment['average'][diff['symbol']]['error'] if diff['symbol'] in experiment['average'] \
+                else common[diff['symbol']]['error'],
             diff['result']
         )))
         doc.write('\n\n')
