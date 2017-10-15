@@ -1,0 +1,45 @@
+// Sample Lab definition
+{
+  // All used variables and constants should be
+  // defined here
+  "variables": ["phi", "n", "I", "R", "mu"],
+  // Now define constant values
+  "constants": {
+    "n": 3,
+    "mu": 12.57e-7
+  },
+  // Formulas listed below will be applied to
+  // all measurements
+  "formulas": {
+    "B": "(mu*n*I)/(2*R*tan(rad(phi)))"
+  },
+  // Common measurements are performed once
+  // so errors and values will be calculated
+  // once
+  "common": {
+    "R": [[0.18], 0.005]
+  },
+  // All other measurements are performed multiple
+  // times and
+  "measurements": [
+    {"I": [[1], 0.025],
+     "phi": [[23], 1]},
+    {"I": [[2.4], 0.025],
+     "phi": [[45], 1]},
+    {"I": [[3.5], 0.025],
+     "phi": [[57], 1]},
+    {"I": [[4.6], 0.025],
+     "phi": [[62], 1]},
+    {"I": [[5], 0.025],
+     "phi": [[64], 1]}
+  ],
+  // Other settings
+  "settings": {
+    // Students coefficient
+    "B": 0.95,
+    // All results will be rounded to
+    // N significant digits
+    // May be removed
+    "round": 3
+  }
+}

@@ -1,21 +1,29 @@
-# Physics lab solver
-# Author: Eugene Protopopov
-# License: WTFPL
+# Copyright (c) 2017 Jevgenijs Protopopovs
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
 
+# Physics lab solver
+#
 # This script is able to process physics lab measurements
 # and calculate some results and create report. Generally, results may be displayed
 # in two different ways: simple structure and TeX document
 # Use simple structure to view evaluation results or use
 # TeX document to get full report. TeX document may be converted
 # into PDF using online 'tex to pdf' services or LaTex package
-
+#
 # Run this file with two parameters:
 #   1. path to JSON - see sample.json to understand its format
 #   2. action:
 #       * print - print raw result
 #       * tex - print TeX to console
 #       * path to file - save TeX to file
-
+#
 # Script is written on Python 3. Configure it before run.
 # On Windows best way to get this work is using Python from Anaconda
 # distribution
