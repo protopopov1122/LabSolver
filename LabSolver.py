@@ -189,6 +189,7 @@ def evaluate(formulas: [(str, sympy.Expr)],
              common_measurements: {sympy.Symbol: ([float], float)},
              experiments: [{sympy.Symbol: ([float], float)}],
              constants: {sympy.Symbol: float},
+             symbols: {str, str},
              settings: dict):
     avg_common = evaluate_common_measurements(common_measurements, settings)
     results = [evaluate_experiment(formulas, avg_common, experiment, constants, settings) for experiment in experiments]
@@ -198,4 +199,5 @@ def evaluate(formulas: [(str, sympy.Expr)],
     }
     if settings['extended']:
         result['constants'] = constants
+    result['symbols'] = symbols
     return result

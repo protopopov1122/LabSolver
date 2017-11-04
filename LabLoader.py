@@ -22,6 +22,7 @@ def load_lab(path: str):
         'formulas': list(),
         'common': dict(),
         'measurements': list(),
+        'symbols': dict(),
         'settings': {
             'B': 0.95,
             'extended': False
@@ -33,7 +34,7 @@ def load_lab(path: str):
         if constant not in task['variables']:
             print('Unknown constant \'%s\'! Add it to variables section' % constant)
             return None
-        task['constants'][task['variables'][constant]] = obj['constants'][constant]
+        task['constants'][task['variables'][constant]] = eval(str(obj['constants'][constant]))
     for formula in obj['formulas'].keys():
         task['formulas'].append((formula, sympy_parser.parse_expr(obj['formulas'][formula], local_dict=task['variables'])))
     for common in obj['common'].keys():
@@ -41,7 +42,7 @@ def load_lab(path: str):
             print('Unknown variable \'%s\'! Add it to variables section' % common)
             return None
         cmn = obj['common'][common]
-        task['common'][task['variables'][common]] = cmn[0], cmn[1]
+        task['common'][task['variables'][common]] = eval(str(cmn[0])), eval(str(cmn[1]))
     for experiment in obj['measurements']:
         expr = dict()
         for measurement in experiment:
@@ -49,8 +50,14 @@ def load_lab(path: str):
                 print('Unknown variable \'%s\'! Add it to variables section' % measurement)
                 return None
             meas = experiment[measurement]
-            expr[task['variables'][measurement]] = meas[0], meas[1]
+            eval_meas = []
+            for m in meas[0]:
+                eval_meas.append(eval(str(m)))
+            expr[task['variables'][measurement]] = eval_meas, eval(str(meas[1]))
         task['measurements'].append(expr)
+    if 'symbols' in obj:
+        for symbol in obj['symbols'].keys():
+            task['symbols'][symbol] = obj['symbols'][symbol]
     if 'settings' in obj:
         if 'B' in obj['settings']:
             task['settings']['B'] = obj['settings']['B']

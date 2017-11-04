@@ -45,6 +45,7 @@ def main(path: str, action: str):
                       common_measurements=task['common'],
                       experiments=task['measurements'],
                       constants=task['constants'],
+                      symbols=task['symbols'],
                       settings=task['settings'])
     if action == 'print':
         print(result)

@@ -261,12 +261,8 @@ def print_common_measurements(doc, results: dict):
     print_direct_measurements(doc, results['common'])
 
 
-def print_lab(results: dict, output = None):
-    if output is None:
-        output = io.StringIO()
-        retout =  True
-    else:
-        retout = False
+def print_lab(results: dict, output_stream = None):
+    output = io.StringIO()
     output.write(r'\documentclass{article}')
     output.write('\n\n')
     output.write(r'\begin{document}')
@@ -276,5 +272,10 @@ def print_lab(results: dict, output = None):
         print_experiment(output, experiment, results['common'], results['constants'])
     output.write('\n\n')
     output.write(r'\end{document}')
-    if retout:
-        return output.getvalue()
+    text: str = output.getvalue()
+    for symbol in results['symbols']:
+        text = text.replace(symbol, results['symbols'][symbol])
+    if output_stream is not None:
+        output_stream.write(text)
+    else:
+        return text
